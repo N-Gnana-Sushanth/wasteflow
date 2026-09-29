@@ -31,7 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenNotifications,
   onOpenAssistant
 }) => {
-  const { currentUser, activeRole, setRole } = useAuth();
+  const { currentUser, activeRole, setRole, switchDemoRole, logout } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const {
     notifications,
@@ -208,9 +208,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                   return (
                     <button
                       key={cfg.role}
-                      onClick={() => {
-                        setRole(cfg.role);
+                      onClick={async () => {
                         setShowRoleMenu(false);
+                        await switchDemoRole(cfg.role);
                       }}
                       className={`w-full flex items-center gap-2.5 px-2.5 py-2 text-xs rounded-lg transition-colors ${
                         isSelected
@@ -224,7 +224,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </button>
                   );
                 })}
-                <div className="border-t border-slate-800 mt-1.5 pt-1.5">
+                <div className="border-t border-slate-800 mt-1.5 pt-1.5 space-y-1">
                   <button
                     onClick={() => {
                       resetAllDemoData();
@@ -234,6 +234,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                   >
                     <RefreshCw className="h-3 w-3" />
                     <span>Reset Mock Dataset</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setShowRoleMenu(false);
+                      await logout();
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-red-400 hover:text-red-300 hover:bg-red-950/40 rounded-lg transition-colors"
+                  >
+                    <span>Sign Out</span>
                   </button>
                 </div>
               </div>

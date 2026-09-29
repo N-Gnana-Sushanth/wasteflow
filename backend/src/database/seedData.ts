@@ -28,6 +28,21 @@ export const SEED_USERS: User[] = [
   {
     id: 'user-c1',
     name: 'Ananya Sharma',
+    email: 'citizen@wasteflow.gov',
+    passwordHash: CITIZEN_PASSWORD_HASH,
+    role: 'citizen',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    phone: '+91 98490 12345',
+    address: 'Flat 402, Green Meadows, Cyber Hills, Hitec City',
+    zone: 'Hitec City - Zone 1',
+    points: 1240,
+    badge: 'Eco Champion',
+    level: 4,
+    createdAt: '2026-01-10T08:00:00.000Z'
+  },
+  {
+    id: 'user-c1-alt',
+    name: 'Ananya Sharma',
     email: 'citizen@wasteflow.in',
     passwordHash: CITIZEN_PASSWORD_HASH,
     role: 'citizen',
@@ -43,6 +58,18 @@ export const SEED_USERS: User[] = [
   {
     id: 'user-a1',
     name: 'Dr. Vikramaditya Rao',
+    email: 'admin@wasteflow.gov',
+    passwordHash: ADMIN_PASSWORD_HASH,
+    role: 'admin',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    phone: '+91 98490 99999',
+    address: 'Municipal Command Operations Wing, Floor 6',
+    zone: 'Metropolitan HQ',
+    createdAt: '2026-01-01T08:00:00.000Z'
+  },
+  {
+    id: 'user-a1-alt',
+    name: 'Dr. Vikramaditya Rao',
     email: 'admin@wasteflow.gov.in',
     passwordHash: ADMIN_PASSWORD_HASH,
     role: 'admin',
@@ -55,6 +82,18 @@ export const SEED_USERS: User[] = [
   {
     id: 'user-d1',
     name: 'Ramesh Kumar',
+    email: 'driver@wasteflow.gov',
+    passwordHash: DRIVER_PASSWORD_HASH,
+    role: 'driver',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+    phone: '+91 98490 54321',
+    address: 'Depot 3, Gachibowli Logistics Park',
+    zone: 'Gachibowli - Zone 2',
+    createdAt: '2026-01-05T08:00:00.000Z'
+  },
+  {
+    id: 'user-d1-alt',
+    name: 'Ramesh Kumar',
     email: 'driver@wasteflow-fleet.in',
     passwordHash: DRIVER_PASSWORD_HASH,
     role: 'driver',
@@ -66,6 +105,18 @@ export const SEED_USERS: User[] = [
   },
   {
     id: 'user-f1',
+    name: 'GreenTech Bio-Circular Hub',
+    email: 'facility@wasteflow.gov',
+    passwordHash: FACILITY_PASSWORD_HASH,
+    role: 'facility',
+    avatar: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=150&auto=format&fit=crop&q=80',
+    phone: '+91 98490 77777',
+    address: 'Circular Economy Industrial Park, ORR Exit 7',
+    zone: 'Industrial Eco-Zone',
+    createdAt: '2026-01-02T08:00:00.000Z'
+  },
+  {
+    id: 'user-f1-alt',
     name: 'GreenTech Bio-Circular Hub',
     email: 'facility@greentech.org',
     passwordHash: FACILITY_PASSWORD_HASH,

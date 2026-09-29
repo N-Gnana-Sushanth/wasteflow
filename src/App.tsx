@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
 import { useLanguage } from './context/LanguageContext';
 import { useAppState } from './context/AppStateContext';
@@ -8,6 +8,10 @@ import { HackathonTourBar } from './components/common/HackathonTourBar';
 import { GlobalSearchModal } from './components/common/GlobalSearchModal';
 import { NotificationDrawer } from './components/common/NotificationDrawer';
 import { AIAssistantDrawer } from './components/citizen/AIAssistantDrawer';
+
+// Authentication & Landing Pages
+import { LoginPage } from './pages/LoginPage';
+import { LandingPage } from './pages/LandingPage';
 
 // Citizen Views
 import { CitizenHome } from './components/citizen/CitizenHome';
@@ -35,8 +39,6 @@ import { DriverDashboard } from './components/driver/DriverDashboard';
 // Facility Views
 import { FacilityDashboard } from './components/facility/FacilityDashboard';
 
-// Landing Page
-import { LandingPage } from './pages/LandingPage';
 import { PickupRequest, WasteCategory } from './types';
 
 // Icons for sub-tabs
@@ -58,7 +60,7 @@ import {
 } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const { activeRole, setRole } = useAuth();
+  const { currentUser, activeRole, isAuthenticated, setRole, switchDemoRole } = useAuth();
   const { t } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<string>('home');
@@ -70,6 +72,23 @@ export const App: React.FC = () => {
   // Pre-fill state when jumping from AI Scanner to Pickup Form
   const [scannerCategoryHint, setScannerCategoryHint] = useState<WasteCategory | undefined>(undefined);
   const [scannerItemHint, setScannerItemHint] = useState<string>('');
+
+  // Default initial tab on role change or login
+  useEffect(() => {
+    if (activeRole === 'citizen') {
+      if (activeTab === 'dashboard' || activeTab === 'driver_route' || activeTab === 'facility_inflow') {
+        setActiveTab('home');
+      }
+    } else if (activeRole === 'admin') {
+      if (activeTab === 'home' || activeTab === 'driver_route' || activeTab === 'facility_inflow') {
+        setActiveTab('dashboard');
+      }
+    } else if (activeRole === 'driver') {
+      setActiveTab('driver_route');
+    } else if (activeRole === 'facility') {
+      setActiveTab('facility_inflow');
+    }
+  }, [activeRole]);
 
   // Define navigation subtabs per role
   const getSubTabs = () => {
@@ -128,6 +147,56 @@ export const App: React.FC = () => {
     }
   };
 
+  // If user is not authenticated: Show LoginPage or LandingPage preview
+  if (!isAuthenticated) {
+    if (activeTab === 'landing') {
+      return (
+        <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+          <header className="border-b border-slate-800 bg-slate-900/80 px-4 sm:px-8 py-3.5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white font-bold">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <span className="text-lg font-bold tracking-tight text-white">
+                Waste<span className="text-emerald-400">Flow</span>
+              </span>
+            </div>
+            <button
+              onClick={() => setActiveTab('login')}
+              className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl transition-all shadow-md"
+            >
+              Sign In to Platform
+            </button>
+          </header>
+
+          <main className="flex-1">
+            <LandingPage
+              onEnterApp={async (role) => {
+                await switchDemoRole(role);
+                if (role === 'citizen') setActiveTab('home');
+                else if (role === 'admin') setActiveTab('dashboard');
+                else if (role === 'driver') setActiveTab('driver_route');
+                else if (role === 'facility') setActiveTab('facility_inflow');
+              }}
+            />
+          </main>
+        </div>
+      );
+    }
+
+    return (
+      <LoginPage
+        onSuccessRedirect={(role) => {
+          if (role === 'citizen') setActiveTab('home');
+          else if (role === 'admin') setActiveTab('dashboard');
+          else if (role === 'driver') setActiveTab('driver_route');
+          else if (role === 'facility') setActiveTab('facility_inflow');
+        }}
+        onExploreLanding={() => setActiveTab('landing')}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
       
@@ -171,8 +240,8 @@ export const App: React.FC = () => {
         {/* Landing Page View */}
         {activeTab === 'landing' ? (
           <LandingPage
-            onEnterApp={(role) => {
-              setRole(role);
+            onEnterApp={async (role) => {
+              await switchDemoRole(role);
               if (role === 'citizen') setActiveTab('home');
               else if (role === 'admin') setActiveTab('dashboard');
               else if (role === 'driver') setActiveTab('driver_route');

@@ -20,7 +20,20 @@ export const MOCK_USERS: User[] = [
   {
     id: 'user-c1',
     name: 'Ananya Sharma',
-    email: 'ananya.sharma@example.com',
+    email: 'citizen@wasteflow.gov',
+    role: 'citizen',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    phone: '+91 98490 12345',
+    address: 'Flat 402, Green Meadows, Cyber Hills, Hitec City',
+    zone: 'Hitec City - Zone 1',
+    points: 1240,
+    badge: 'Eco Champion',
+    level: 4
+  },
+  {
+    id: 'user-c1-alt',
+    name: 'Ananya Sharma',
+    email: 'citizen@wasteflow.in',
     role: 'citizen',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     phone: '+91 98490 12345',
@@ -33,7 +46,17 @@ export const MOCK_USERS: User[] = [
   {
     id: 'user-a1',
     name: 'Dr. Vikramaditya Rao',
-    email: 'admin.rao@wasteflow.gov.in',
+    email: 'admin@wasteflow.gov',
+    role: 'admin',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    phone: '+91 98490 99999',
+    address: 'Municipal Command Operations Wing, Floor 6',
+    zone: 'Metropolitan HQ'
+  },
+  {
+    id: 'user-a1-alt',
+    name: 'Dr. Vikramaditya Rao',
+    email: 'admin@wasteflow.gov.in',
     role: 'admin',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
     phone: '+91 98490 99999',
@@ -43,7 +66,17 @@ export const MOCK_USERS: User[] = [
   {
     id: 'user-d1',
     name: 'Ramesh Kumar',
-    email: 'driver.ramesh@wasteflow-fleet.in',
+    email: 'driver@wasteflow.gov',
+    role: 'driver',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+    phone: '+91 98490 54321',
+    address: 'Depot 3, Gachibowli Logistics Park',
+    zone: 'Gachibowli - Zone 2'
+  },
+  {
+    id: 'user-d1-alt',
+    name: 'Ramesh Kumar',
+    email: 'driver@wasteflow-fleet.in',
     role: 'driver',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
     phone: '+91 98490 54321',
@@ -53,7 +86,17 @@ export const MOCK_USERS: User[] = [
   {
     id: 'user-f1',
     name: 'GreenTech Bio-Circular Hub',
-    email: 'ops@greentech-recovery.org',
+    email: 'facility@wasteflow.gov',
+    role: 'facility',
+    avatar: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=150&auto=format&fit=crop&q=80',
+    phone: '+91 98490 77777',
+    address: 'Circular Economy Industrial Park, ORR Exit 7',
+    zone: 'Industrial Eco-Zone'
+  },
+  {
+    id: 'user-f1-alt',
+    name: 'GreenTech Bio-Circular Hub',
+    email: 'facility@greentech.org',
     role: 'facility',
     avatar: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=150&auto=format&fit=crop&q=80',
     phone: '+91 98490 77777',
