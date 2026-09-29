@@ -130,14 +130,13 @@ export const App: React.FC = () => {
     switch (activeRole) {
       case 'citizen':
         return [
-          { id: 'home', label: t('nav_home') || 'Dashboard', icon: Home },
+          { id: 'home', label: t('nav_home') || 'My Dashboard', icon: Home },
           { id: 'scanner', label: t('nav_scanner') || 'AI Scanner', icon: Camera },
-          { id: 'pickups', label: t('nav_pickups') || 'Schedule Pickup', icon: Truck },
+          { id: 'pickups', label: t('nav_pickups') || 'Book Pickup', icon: Truck },
           { id: 'tracking', label: t('nav_tracking') || 'Live Tracking', icon: Navigation },
           { id: 'rewards', label: t('nav_rewards') || 'Eco Rewards', icon: Award },
           { id: 'dumping', label: t('nav_dumping') || 'Report Dumping', icon: Flame },
-          { id: 'centers', label: t('nav_centers') || 'Recycling Centers', icon: Building2 },
-          { id: 'landing', label: 'Public Portal', icon: LayoutDashboard }
+          { id: 'centers', label: t('nav_centers') || 'Recycling Centers', icon: Building2 }
         ];
       case 'admin':
         return [
@@ -148,18 +147,15 @@ export const App: React.FC = () => {
           { id: 'predictive', label: 'AI Forecasting', icon: TrendingUp },
           { id: 'analytics', label: t('nav_analytics') || 'Analytics', icon: Activity },
           { id: 'incidents', label: t('nav_incidents') || 'Illegal Dumping', icon: Flame },
-          { id: 'settings', label: t('nav_admin_settings') || 'Settings & Logs', icon: Sliders },
-          { id: 'landing', label: 'Public Portal', icon: Home }
+          { id: 'settings', label: t('nav_admin_settings') || 'Settings & Logs', icon: Sliders }
         ];
       case 'driver':
         return [
-          { id: 'driver_route', label: t('nav_driver_route') || 'Driver Route & Manifest', icon: Truck },
-          { id: 'landing', label: 'Public Portal', icon: Home }
+          { id: 'driver_route', label: t('nav_driver_route') || 'Driver Route & Manifest', icon: Truck }
         ];
       case 'facility':
         return [
-          { id: 'facility_inflow', label: 'Facility Terminal', icon: Building2 },
-          { id: 'landing', label: 'Public Portal', icon: Home }
+          { id: 'facility_inflow', label: 'Facility Terminal', icon: Building2 }
         ];
       default:
         return [];
@@ -216,6 +212,10 @@ export const App: React.FC = () => {
         onSuccessRedirect={(role) => {
           const target = getAuthorizedRolePath(role);
           navigateTo(target);
+          if (role === 'citizen') setActiveTab('home');
+          else if (role === 'admin') setActiveTab('dashboard');
+          else if (role === 'driver') setActiveTab('driver_route');
+          else if (role === 'facility') setActiveTab('facility_inflow');
         }}
         onExploreLanding={() => navigateTo('/landing')}
       />
@@ -257,8 +257,8 @@ export const App: React.FC = () => {
         onOpenAssistant={() => setShowAssistantDrawer(true)}
       />
 
-      {/* Quick Scenario & Simulation Bar (for Admin and general demo operations) */}
-      <QuickScenarioBar />
+      {/* Quick Scenario & Simulation Bar (for Admin only) */}
+      {activeRole === 'admin' && !isForbidden && <QuickScenarioBar />}
 
       {/* Sub-Navigation Tabs Bar */}
       {!isForbidden && activeTab !== 'landing' && (
@@ -366,8 +366,8 @@ export const App: React.FC = () => {
 
       </main>
 
-      {/* Floating Guided Tour Controller */}
-      <HackathonTourBar onNavigateTab={(tab) => setActiveTab(tab)} />
+      {/* Floating Guided Tour Controller (Admin only) */}
+      {activeRole === 'admin' && !isForbidden && <HackathonTourBar onNavigateTab={(tab) => setActiveTab(tab)} />}
 
       {/* Global Modals & Drawers */}
       <GlobalSearchModal

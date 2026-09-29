@@ -86,46 +86,50 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Center: Search & Showcase Tour */}
+        {/* Center: Search & Admin Tour */}
         <div className="hidden md:flex items-center gap-2.5">
           <button
             onClick={onOpenSearch}
             className="flex items-center gap-2 rounded-lg border border-slate-700/70 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-300 hover:border-slate-600 hover:bg-slate-800 transition-colors"
           >
             <Search className="h-3.5 w-3.5 text-slate-400" />
-            <span>Search pickups, bins, vehicles...</span>
+            <span>Search pickups, bins, requests...</span>
             <kbd className="ml-2 rounded bg-slate-700 px-1.5 py-0.5 text-[10px] text-slate-300 font-mono">⌘K</kbd>
           </button>
 
-          <button
-            onClick={startShowcaseTour}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-              showcaseActive
-                ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-400/40'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm'
-            }`}
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>{showcaseActive ? 'Tour Active' : 'Guided Tour'}</span>
-          </button>
+          {activeRole === 'admin' && (
+            <button
+              onClick={startShowcaseTour}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                showcaseActive
+                  ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-400/40'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm'
+              }`}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>{showcaseActive ? 'Tour Active' : 'Guided Tour'}</span>
+            </button>
+          )}
         </div>
 
         {/* Right Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
           
-          {/* Telemetry Indicator */}
-          <button
-            onClick={toggleSimulation}
-            title={isSimulating ? 'Simulated Telemetry Active' : 'Simulation Paused'}
-            className={`hidden lg:flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition-colors ${
-              isSimulating
-                ? 'border-emerald-800/60 bg-emerald-950/30 text-emerald-300'
-                : 'border-slate-700 bg-slate-800/50 text-slate-400'
-            }`}
-          >
-            <span className={`h-2 w-2 rounded-full ${isSimulating ? 'bg-emerald-400' : 'bg-slate-500'}`} />
-            <span className="font-mono text-[11px]">Telemetry {isSimulating ? 'Active' : 'Paused'}</span>
-          </button>
+          {/* Telemetry Indicator (Admin Only) */}
+          {activeRole === 'admin' && (
+            <button
+              onClick={toggleSimulation}
+              title={isSimulating ? 'Simulated Telemetry Active' : 'Simulation Paused'}
+              className={`hidden lg:flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition-colors ${
+                isSimulating
+                  ? 'border-emerald-800/60 bg-emerald-950/30 text-emerald-300'
+                  : 'border-slate-700 bg-slate-800/50 text-slate-400'
+              }`}
+            >
+              <span className={`h-2 w-2 rounded-full ${isSimulating ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+              <span className="font-mono text-[11px]">Telemetry {isSimulating ? 'Active' : 'Paused'}</span>
+            </button>
+          )}
 
           {/* AI Assistant */}
           <button
