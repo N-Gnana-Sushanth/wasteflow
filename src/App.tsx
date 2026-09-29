@@ -8,6 +8,7 @@ import { HackathonTourBar } from './components/common/HackathonTourBar';
 import { GlobalSearchModal } from './components/common/GlobalSearchModal';
 import { NotificationDrawer } from './components/common/NotificationDrawer';
 import { AIAssistantDrawer } from './components/citizen/AIAssistantDrawer';
+import { AccessDenied } from './components/common/AccessDenied';
 
 // Authentication & Landing Pages
 import { LoginPage } from './pages/LoginPage';
@@ -39,12 +40,10 @@ import { DriverDashboard } from './components/driver/DriverDashboard';
 // Facility Views
 import { FacilityDashboard } from './components/facility/FacilityDashboard';
 
-import { PickupRequest, WasteCategory } from './types';
+import { PickupRequest, WasteCategory, UserRole } from './types';
 
 // Icons for sub-tabs
 import {
-  Sparkles,
-  LayoutDashboard,
   Camera,
   Truck,
   Award,
@@ -56,12 +55,18 @@ import {
   TrendingUp,
   Sliders,
   Activity,
-  Home
+  Home,
+  LayoutDashboard
 } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const { currentUser, activeRole, isAuthenticated, setRole, switchDemoRole } = useAuth();
+  const { currentUser, activeRole, isAuthenticated } = useAuth();
   const { t } = useLanguage();
+
+  // URL Path tracking
+  const [currentPath, setCurrentPath] = useState<string>(() => {
+    return window.location.pathname.toLowerCase();
+  });
 
   const [activeTab, setActiveTab] = useState<string>('home');
   const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
@@ -73,8 +78,38 @@ export const App: React.FC = () => {
   const [scannerCategoryHint, setScannerCategoryHint] = useState<WasteCategory | undefined>(undefined);
   const [scannerItemHint, setScannerItemHint] = useState<string>('');
 
-  // Default initial tab on role change or login
+  // Handle URL change listeners (popstate & pushstate)
   useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname.toLowerCase());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigateTo = (path: string) => {
+    const normalized = path.toLowerCase();
+    window.history.pushState(null, '', normalized);
+    setCurrentPath(normalized);
+  };
+
+  const getAuthorizedRolePath = (role: UserRole): string => {
+    switch (role) {
+      case 'admin':
+        return '/admin';
+      case 'driver':
+        return '/driver';
+      case 'facility':
+        return '/facility';
+      default:
+        return '/citizen';
+    }
+  };
+
+  // Synchronize initial subtab based on role and path
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
     if (activeRole === 'citizen') {
       if (activeTab === 'dashboard' || activeTab === 'driver_route' || activeTab === 'facility_inflow') {
         setActiveTab('home');
@@ -88,7 +123,7 @@ export const App: React.FC = () => {
     } else if (activeRole === 'facility') {
       setActiveTab('facility_inflow');
     }
-  }, [activeRole]);
+  }, [activeRole, isAuthenticated]);
 
   // Define navigation subtabs per role
   const getSubTabs = () => {
@@ -147,9 +182,9 @@ export const App: React.FC = () => {
     }
   };
 
-  // If user is not authenticated: Show LoginPage or LandingPage preview
+  // 1. UNHEALTHY / UNAUTHENTICATED STATE
   if (!isAuthenticated) {
-    if (activeTab === 'landing') {
+    if (currentPath === '/landing') {
       return (
         <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
           <header className="border-b border-slate-800 bg-slate-900/80 px-4 sm:px-8 py-3.5 flex items-center justify-between">
@@ -162,7 +197,7 @@ export const App: React.FC = () => {
               </span>
             </div>
             <button
-              onClick={() => setActiveTab('login')}
+              onClick={() => navigateTo('/login')}
               className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl transition-all shadow-md"
             >
               Sign In to Platform
@@ -170,15 +205,7 @@ export const App: React.FC = () => {
           </header>
 
           <main className="flex-1">
-            <LandingPage
-              onEnterApp={async (role) => {
-                await switchDemoRole(role);
-                if (role === 'citizen') setActiveTab('home');
-                else if (role === 'admin') setActiveTab('dashboard');
-                else if (role === 'driver') setActiveTab('driver_route');
-                else if (role === 'facility') setActiveTab('facility_inflow');
-              }}
-            />
+            <LandingPage onEnterApp={() => navigateTo('/login')} />
           </main>
         </div>
       );
@@ -187,14 +214,37 @@ export const App: React.FC = () => {
     return (
       <LoginPage
         onSuccessRedirect={(role) => {
-          if (role === 'citizen') setActiveTab('home');
-          else if (role === 'admin') setActiveTab('dashboard');
-          else if (role === 'driver') setActiveTab('driver_route');
-          else if (role === 'facility') setActiveTab('facility_inflow');
+          const target = getAuthorizedRolePath(role);
+          navigateTo(target);
         }}
-        onExploreLanding={() => setActiveTab('landing')}
+        onExploreLanding={() => navigateTo('/landing')}
       />
     );
+  }
+
+  // 2. AUTHENTICATED ROLE-BASED ROUTE GUARDS
+  // Check if current URL path violates the authenticated user's role:
+  const isVisitingAdmin = currentPath.startsWith('/admin');
+  const isVisitingDriver = currentPath.startsWith('/driver');
+  const isVisitingFacility = currentPath.startsWith('/facility');
+  const isVisitingCitizen = currentPath.startsWith('/citizen');
+
+  let isForbidden = false;
+  let attemptedRoute = currentPath;
+
+  if (activeRole === 'citizen' && (isVisitingAdmin || isVisitingDriver || isVisitingFacility)) {
+    isForbidden = true;
+    attemptedRoute = isVisitingAdmin ? '/admin' : isVisitingDriver ? '/driver' : '/facility';
+  } else if (activeRole === 'driver' && (isVisitingAdmin || isVisitingFacility || isVisitingCitizen)) {
+    isForbidden = true;
+    attemptedRoute = isVisitingAdmin ? '/admin' : isVisitingFacility ? '/facility' : '/citizen';
+  } else if (activeRole === 'facility' && (isVisitingAdmin || isVisitingDriver || isVisitingCitizen)) {
+    isForbidden = true;
+    attemptedRoute = isVisitingAdmin ? '/admin' : isVisitingDriver ? '/driver' : '/citizen';
+  } else if (activeRole === 'admin' && (isVisitingDriver || isVisitingFacility || isVisitingCitizen)) {
+    // Admin is guided to their own Command Center
+    isForbidden = true;
+    attemptedRoute = isVisitingDriver ? '/driver' : isVisitingFacility ? '/facility' : '/citizen';
   }
 
   return (
@@ -207,49 +257,61 @@ export const App: React.FC = () => {
         onOpenAssistant={() => setShowAssistantDrawer(true)}
       />
 
-      {/* Quick Scenario & Simulation Bar */}
+      {/* Quick Scenario & Simulation Bar (for Admin and general demo operations) */}
       <QuickScenarioBar />
 
       {/* Sub-Navigation Tabs Bar */}
-      <div className="border-b border-slate-800 bg-slate-900/70 backdrop-blur-sm sticky top-16 z-30 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl flex items-center gap-1.5 overflow-x-auto py-2 scrollbar-none">
-          {subTabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
-                  isActive
-                    ? 'bg-emerald-600 text-white shadow-sm font-semibold'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+      {!isForbidden && activeTab !== 'landing' && (
+        <div className="border-b border-slate-800 bg-slate-900/70 backdrop-blur-sm sticky top-16 z-30 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl flex items-center gap-1.5 overflow-x-auto py-2 scrollbar-none">
+            {subTabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                    isActive
+                      ? 'bg-emerald-600 text-white shadow-sm font-semibold'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content Viewport */}
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
         
-        {/* Landing Page View */}
-        {activeTab === 'landing' ? (
+        {/* 1. If Access Denied / Route Guard Triggered */}
+        {isForbidden ? (
+          <AccessDenied
+            attemptedPath={attemptedRoute}
+            onNavigateToAuthorized={() => {
+              const authorizedPath = getAuthorizedRolePath(activeRole);
+              navigateTo(authorizedPath);
+            }}
+          />
+        ) : activeTab === 'landing' ? (
+          /* Public Portal Overview */
           <LandingPage
-            onEnterApp={async (role) => {
-              await switchDemoRole(role);
-              if (role === 'citizen') setActiveTab('home');
-              else if (role === 'admin') setActiveTab('dashboard');
-              else if (role === 'driver') setActiveTab('driver_route');
-              else if (role === 'facility') setActiveTab('facility_inflow');
+            onEnterApp={() => {
+              const authorizedPath = getAuthorizedRolePath(activeRole);
+              navigateTo(authorizedPath);
+              if (activeRole === 'citizen') setActiveTab('home');
+              else if (activeRole === 'admin') setActiveTab('dashboard');
+              else if (activeRole === 'driver') setActiveTab('driver_route');
+              else if (activeRole === 'facility') setActiveTab('facility_inflow');
             }}
           />
         ) : activeRole === 'citizen' ? (
-          /* CITIZEN PORTAL VIEWS */
+          /* CITIZEN PORTAL VIEWS (Only accessible by authenticated Citizens) */
           <>
             {activeTab === 'home' && (
               <CitizenHome
@@ -283,7 +345,7 @@ export const App: React.FC = () => {
             {activeTab === 'centers' && <RecyclingFinder />}
           </>
         ) : activeRole === 'admin' ? (
-          /* MUNICIPAL ADMIN PORTAL VIEWS */
+          /* MUNICIPAL ADMIN PORTAL VIEWS (Only accessible by authenticated Admins) */
           <>
             {activeTab === 'dashboard' && <AdminDashboard onNavigateTab={(t) => setActiveTab(t)} />}
             {activeTab === 'bins' && <SmartBinIoTView />}
@@ -295,10 +357,10 @@ export const App: React.FC = () => {
             {activeTab === 'settings' && <AdminSettingsView />}
           </>
         ) : activeRole === 'driver' ? (
-          /* DRIVER PORTAL VIEW */
+          /* DRIVER PORTAL VIEW (Only accessible by authenticated Drivers) */
           <DriverDashboard />
         ) : activeRole === 'facility' ? (
-          /* FACILITY PORTAL VIEW */
+          /* FACILITY PORTAL VIEW (Only accessible by authenticated Facility Managers) */
           <FacilityDashboard />
         ) : null}
 
@@ -312,20 +374,15 @@ export const App: React.FC = () => {
         isOpen={showSearchModal}
         onClose={() => setShowSearchModal(false)}
         onSelectEntity={(type, id) => {
-          if (type === 'bin') {
-            setRole('admin');
+          if (type === 'bin' && activeRole === 'admin') {
             setActiveTab('bins');
-          } else if (type === 'vehicle') {
-            setRole('admin');
+          } else if (type === 'vehicle' && activeRole === 'admin') {
             setActiveTab('routes');
-          } else if (type === 'pickup') {
-            setRole('citizen');
+          } else if (type === 'pickup' && activeRole === 'citizen') {
             setActiveTab('tracking');
-          } else if (type === 'incident') {
-            setRole('admin');
+          } else if (type === 'incident' && activeRole === 'admin') {
             setActiveTab('incidents');
-          } else if (type === 'facility') {
-            setRole('facility');
+          } else if (type === 'facility' && activeRole === 'facility') {
             setActiveTab('facility_inflow');
           }
         }}

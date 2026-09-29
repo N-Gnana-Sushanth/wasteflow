@@ -10,11 +10,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
-  Sparkles,
-  Building2,
-  Cpu,
-  Truck,
-  UserCheck
+  KeyRound
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
@@ -23,16 +19,21 @@ import { ZONES } from '../data/mockData';
 interface LoginPageProps {
   onSuccessRedirect?: (role: UserRole) => void;
   onExploreLanding?: () => void;
+  initialRoleHint?: UserRole;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExploreLanding }) => {
-  const { login, register, switchDemoRole } = useAuth();
+export const LoginPage: React.FC<LoginPageProps> = ({
+  onSuccessRedirect,
+  onExploreLanding,
+  initialRoleHint
+}) => {
+  const { login, register } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'signin' | 'register'>('signin');
   const [email, setEmail] = useState('citizen@wasteflow.gov');
   const [password, setPassword] = useState('Citizen@123');
   
-  // Registration Form State
+  // Registration Form State (Citizen only)
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
@@ -44,60 +45,30 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const demoAccounts: { role: UserRole; title: string; email: string; pass: string; icon: any; color: string }[] = [
-    {
-      role: 'citizen',
-      title: 'Citizen Portal',
-      email: 'citizen@wasteflow.gov',
-      pass: 'Citizen@123',
-      icon: UserCheck,
-      color: 'border-emerald-500/40 bg-emerald-950/20 text-emerald-300 hover:bg-emerald-900/40'
-    },
-    {
-      role: 'admin',
-      title: 'Municipal Admin',
-      email: 'admin@wasteflow.gov',
-      pass: 'Admin@123',
-      icon: Cpu,
-      color: 'border-cyan-500/40 bg-cyan-950/20 text-cyan-300 hover:bg-cyan-900/40'
-    },
-    {
-      role: 'driver',
-      title: 'Collection Driver',
-      email: 'driver@wasteflow.gov',
-      pass: 'Driver@123',
-      icon: Truck,
-      color: 'border-amber-500/40 bg-amber-950/20 text-amber-300 hover:bg-amber-900/40'
-    },
-    {
-      role: 'facility',
-      title: 'Recycling Facility',
-      email: 'facility@wasteflow.gov',
-      pass: 'Facility@123',
-      icon: Building2,
-      color: 'border-purple-500/40 bg-purple-950/20 text-purple-300 hover:bg-purple-900/40'
-    }
+  // Demo Credentials for Evaluators - explicitly authenticated via backend POST /api/auth/login
+  const demoLogins = [
+    { label: 'Citizen Demo', email: 'citizen@wasteflow.gov', pass: 'Citizen@123', role: 'citizen' as UserRole },
+    { label: 'Admin Demo', email: 'admin@wasteflow.gov', pass: 'Admin@123', role: 'admin' as UserRole },
+    { label: 'Driver Demo', email: 'driver@wasteflow.gov', pass: 'Driver@123', role: 'driver' as UserRole },
+    { label: 'Facility Demo', email: 'facility@wasteflow.gov', pass: 'Facility@123', role: 'facility' as UserRole }
   ];
 
-  const handleQuickFill = (acc: typeof demoAccounts[0]) => {
+  const handleDemoFillAndLogin = async (demo: typeof demoLogins[0]) => {
     setActiveTab('signin');
-    setEmail(acc.email);
-    setPassword(acc.pass);
+    setEmail(demo.email);
+    setPassword(demo.pass);
     setErrorMsg(null);
-  };
-
-  const handleQuickLogin = async (acc: typeof demoAccounts[0]) => {
     setLoading(true);
-    setErrorMsg(null);
+
     try {
-      const ok = await switchDemoRole(acc.role);
-      if (ok) {
-        if (onSuccessRedirect) onSuccessRedirect(acc.role);
+      const user = await login(demo.email, demo.pass);
+      if (user) {
+        if (onSuccessRedirect) onSuccessRedirect(user.role);
       } else {
-        setErrorMsg('Authentication error. Please try again.');
+        setErrorMsg('Authentication failed with demo credentials.');
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Login failed');
+      setErrorMsg(err.message || 'Login failed.');
     } finally {
       setLoading(false);
     }
@@ -106,7 +77,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setErrorMsg('Please enter both email and password.');
+      setErrorMsg('Please enter your email and password.');
       return;
     }
 
@@ -117,7 +88,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
       if (user) {
         if (onSuccessRedirect) onSuccessRedirect(user.role);
       } else {
-        setErrorMsg('Invalid email or password. You can also use the 1-Click Demo accounts below.');
+        setErrorMsg('Invalid email or password. Please verify your credentials.');
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Authentication failed. Please verify credentials.');
@@ -129,7 +100,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName || !regEmail || !regPassword) {
-      setErrorMsg('Please fill in all required registration fields.');
+      setErrorMsg('Please fill in all required fields.');
       return;
     }
 
@@ -147,13 +118,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
       });
 
       if (user) {
-        setSuccessMsg('Account created successfully! Redirecting...');
+        setSuccessMsg('Citizen account created successfully! Signing in...');
         setTimeout(() => {
           if (onSuccessRedirect) onSuccessRedirect('citizen');
         }, 600);
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Registration failed. Email may already be registered.');
+      setErrorMsg(err.message || 'Registration failed. Email may already be in use.');
     } finally {
       setLoading(false);
     }
@@ -162,14 +133,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between relative overflow-hidden font-sans">
       
-      {/* Ambient background glow */}
+      {/* Background ambient lighting */}
       <div className="absolute -top-40 -left-40 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-teal-600/10 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Top Bar Header */}
+      {/* Header */}
       <header className="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md px-4 sm:px-8 py-4 flex items-center justify-between z-10">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white font-bold shadow-md shadow-emerald-950">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white font-bold shadow-md">
             <Trash2 className="h-5 w-5" />
           </div>
           <div>
@@ -187,32 +158,31 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
             onClick={onExploreLanding}
             className="text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-750 px-3.5 py-1.5 rounded-lg border border-slate-700 transition-colors"
           >
-            Explore Public Portal
+            Public Overview
           </button>
         )}
       </header>
 
-      {/* Main Authentication Container */}
+      {/* Main Authentication Card */}
       <main className="flex-1 flex items-center justify-center px-4 py-8 sm:py-12 z-10">
-        <div className="w-full max-w-xl">
+        <div className="w-full max-w-lg">
           
           <div className="rounded-2xl border border-slate-800 bg-slate-900/90 shadow-2xl p-6 sm:p-8 backdrop-blur-sm">
             
-            {/* Header / Subtitle */}
             <div className="text-center space-y-2 mb-6">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-800/50 text-[11px] font-mono font-semibold text-emerald-400">
                 <ShieldCheck className="h-3.5 w-3.5" />
-                <span>SECURE MUNICIPAL ACCESS</span>
+                <span>SECURE JWT AUTHENTICATION</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+              <h1 className="text-2xl font-bold tracking-tight text-white">
                 Sign in to WasteFlow
               </h1>
-              <p className="text-xs sm:text-sm text-slate-400">
-                Unified operations & citizen portal for smart waste logistics
+              <p className="text-xs text-slate-400">
+                Authenticate with your municipal account to access your assigned portal
               </p>
             </div>
 
-            {/* Error / Success Notifications */}
+            {/* Error / Success alerts */}
             {errorMsg && (
               <div className="mb-5 flex items-center gap-2.5 rounded-xl border border-red-500/40 bg-red-950/30 p-3 text-xs text-red-200 animate-fade-in">
                 <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
@@ -227,7 +197,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
               </div>
             )}
 
-            {/* Tab Switcher */}
+            {/* Tab selection */}
             <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-950 p-1 border border-slate-800 mb-6">
               <button
                 type="button"
@@ -253,7 +223,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
               </button>
             </div>
 
-            {/* Tab 1: Sign In Form */}
+            {/* Sign In Form */}
             {activeTab === 'signin' && (
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div>
@@ -267,7 +237,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="e.g. citizen@wasteflow.gov"
+                      placeholder="citizen@wasteflow.gov"
                       className="w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </div>
@@ -278,7 +248,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
                     <label className="block text-xs font-medium text-slate-300">
                       Password
                     </label>
-                    <span className="text-[11px] text-slate-500">Demo password: Citizen@123</span>
                   </div>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
@@ -296,13 +265,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 text-xs shadow-lg shadow-emerald-950 transition-all disabled:opacity-50"
+                  className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 text-xs shadow-lg transition-all disabled:opacity-50"
                 >
                   {loading ? (
-                    <span>Authenticating...</span>
+                    <span>Authenticating with Backend JWT...</span>
                   ) : (
                     <>
-                      <span>Sign In with Backend JWT</span>
+                      <span>Sign In</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </>
                   )}
@@ -310,7 +279,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
               </form>
             )}
 
-            {/* Tab 2: Citizen Registration */}
+            {/* Citizen Registration Form */}
             {activeTab === 'register' && (
               <form onSubmit={handleRegister} className="space-y-3.5">
                 <div>
@@ -343,7 +312,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
                         value={regEmail}
                         onChange={(e) => setRegEmail(e.target.value)}
                         placeholder="radhika@example.com"
-                        className="w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -360,7 +329,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
                         value={regPassword}
                         onChange={(e) => setRegPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950/70 pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -418,7 +387,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
                 </div>
 
                 <div className="rounded-lg bg-slate-950 p-2.5 border border-slate-800 text-[11px] text-slate-400">
-                  <span className="text-emerald-400 font-semibold">Note:</span> Municipal Admin, Driver, and Facility Operator accounts are provisioned by the city administrator. Citizens receive 100 bonus Eco-Points upon registration.
+                  <span className="text-emerald-400 font-semibold">Note:</span> Citizen registration assigns the Citizen role with 100 bonus Eco-Points. Municipal Admin, Driver, and Facility credentials are provisioned by city authority.
                 </div>
 
                 <button
@@ -427,10 +396,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
                   className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 text-xs shadow-lg transition-all disabled:opacity-50"
                 >
                   {loading ? (
-                    <span>Creating Account...</span>
+                    <span>Registering Account...</span>
                   ) : (
                     <>
-                      <span>Register Citizen Profile</span>
+                      <span>Create Citizen Account</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </>
                   )}
@@ -438,54 +407,52 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessRedirect, onExplo
               </form>
             )}
 
-            {/* 1-Click Quick Demo Switcher Section */}
+            {/* Quick Demo Credentials Authenticator (Evaluator Convenience) */}
             <div className="mt-6 pt-5 border-t border-slate-800">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-2.5">
                 <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-                  1-Click Role Login (Hackathon Demo)
+                  <KeyRound className="h-3.5 w-3.5 text-amber-400" />
+                  Evaluator Demo Credentials (Backend Auth)
                 </span>
-                <span className="text-[10px] text-slate-500">Live Seeded JWTs</span>
               </div>
+              <p className="text-[11px] text-slate-400 mb-3 leading-relaxed">
+                Clicking an account authenticates with the real backend JWT API:
+              </p>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {demoAccounts.map((acc) => {
-                  const Icon = acc.icon;
-                  return (
-                    <button
-                      key={acc.role}
-                      type="button"
-                      onClick={() => handleQuickLogin(acc)}
-                      disabled={loading}
-                      className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all ${acc.color} group disabled:opacity-50`}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <Icon className="h-4 w-4 shrink-0" />
-                        <span className="text-[10px] font-mono opacity-80 uppercase">{acc.role}</span>
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold leading-tight truncate">{acc.title}</p>
-                        <p className="text-[10px] opacity-75 font-mono truncate">{acc.email.split('@')[0]}</p>
-                      </div>
-                    </button>
-                  );
-                })}
+              <div className="grid grid-cols-2 gap-2">
+                {demoLogins.map((demo) => (
+                  <button
+                    key={demo.role}
+                    type="button"
+                    onClick={() => handleDemoFillAndLogin(demo)}
+                    disabled={loading}
+                    className="p-2.5 rounded-xl border border-slate-800 bg-slate-950 hover:border-slate-700 hover:bg-slate-800 text-left transition-all group disabled:opacity-50"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-white group-hover:text-emerald-400 transition-colors">
+                        {demo.label}
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-500 uppercase">{demo.role}</span>
+                    </div>
+                    <div className="text-[10px] font-mono text-slate-400 mt-0.5 truncate">
+                      {demo.email}
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
 
           </div>
 
-          {/* Footer information */}
           <div className="text-center mt-6 text-[11px] text-slate-500 font-mono">
-            <span>WasteFlow Municipal Operating System • REST API v1.0 • Node/Express Backend</span>
+            <span>WasteFlow Municipal OS • JWT RBAC Enabled • Express Backend</span>
           </div>
 
         </div>
       </main>
 
-      {/* Bottom Legal Bar */}
       <footer className="border-t border-slate-900 bg-slate-950/80 py-3 px-4 text-center text-xs text-slate-600 font-mono z-10">
-        WasteFlow © 2026 • Real-Time Municipal Segregation, AI Vision & Circular Logistics Platform
+        WasteFlow © 2026 • Municipal Waste Collection & Smart Urban Circular Platform
       </footer>
 
     </div>
